@@ -1,6 +1,9 @@
 const express = require("express");
 const costsRoute = require("./routes/costsRoute");
 const userRoute = require("./routes/userRoute");
+const walletRoute = require("./routes/walletRoute");
+
+const cors = require("cors");
 
 const mongoose = require("mongoose");
 require("dotenv").config();
@@ -8,20 +11,23 @@ require("dotenv").config();
 const app = express();
 
 app.use(express.json());
-
+app.use(cors());
 // *** Costs
 app.use("/api/costs", costsRoute);
 
 // *** User
 app.use("/api/user", userRoute);
 
-mongoose
-  .connect("mongodb://0.0.0.0:27017/test")
-  .then(() => {
-    console.log(12232);
-  })
-  .catch((error) => console.log(error));
+// *** Wallet
+app.use("/api/wallet", walletRoute);
 
-app.listen(27017, () => {
+mongoose
+  .connect(process.env.MONGODB_URL)
+  .then(() => {
+    console.log("Connected to mongodb");
+  })
+  .catch((error) => console.log(error.message));
+
+app.listen(8000, () => {
   console.log("Server is running ✔");
 });

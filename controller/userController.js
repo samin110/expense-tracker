@@ -1,10 +1,18 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
-const regitserUser = async (req, res) => {
+const { generateToken } = require("../utils/generateToken");
+const { getOneUserData } = require("../utils/user");
+
+const registerUser = async (req, res) => {
   const { username, password, email } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password, process.env.SALT_PASSWORD);
+  const user = await getOneUserData({ username });
+
+  if (user?.username)
+    return res.status(400).json({ message: "این حساب کاربری قبلا ثبت شده !" });
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   await User.create({
     email,
@@ -12,7 +20,19 @@ const regitserUser = async (req, res) => {
     username,
   });
 
-  res.status(201).json({ message: "User created ✔", data: req.body });
+  const createdUser = await getOneUserData({ username });
+
+  const accessToken = await generateToken({ _id: createdUser?._id, username });
+
+  res.status(201).json({
+    message: "User created ✔",
+    data: {
+      email: createdUser.email,
+      username: createdUser.username,
+      wallet_balance: "0",
+      accessToken,
+    },
+  });
 };
 
 const loginUser = async (req, res) => {
@@ -20,18 +40,16 @@ const loginUser = async (req, res) => {
 
   const user = await User.findOne({ username });
 
+  if (!user)
+    return res.status(404).json({ message: "حساب کاربری اشتباه است !" });
+
   const validatePassword = await bcrypt.compare(password, user?.password);
 
   if (validatePassword && user?.username) {
-    const accessToken = jwt.sign(
-      {
-        user: {
-          email,
-          id,
-        },
-      },
-      process.env.TOKEN_PRIVITE_KEY
-    );
+    const accessToken = await generateToken({
+      _id: user?._id,
+      username: user?.username,
+    });
 
     return res.status(200).json({
       message: "user success login ✔",
@@ -42,13 +60,13 @@ const loginUser = async (req, res) => {
         id: user?.id,
       },
     });
-  } else res.staus(400).json({ message: "User not found" });
+  } else res.status(400).json({ message: "رمز عبور اشتباه است  !" });
 };
 
 const getCurrentUser = async (req, res) => {
-  const user = User.findById({ id: req.user.id });
+  const user = await User.findById({ _id: req.user._id });
 
   res.status(200).json({ message: "Ok", data: user });
 };
 
-module.exports = { loginUser, regitserUser, getCurrentUser };
+module.exports = { loginUser, registerUser, getCurrentUser };
