@@ -1,17 +1,17 @@
 const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
+
 const costsRoute = require("./routes/costsRoute");
 const userRoute = require("./routes/userRoute");
 const walletRoute = require("./routes/walletRoute");
-
-const cors = require("cors");
-
-const mongoose = require("mongoose");
-require("dotenv").config();
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
+
 // *** Costs
 app.use("/api/costs", costsRoute);
 

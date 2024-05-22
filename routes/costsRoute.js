@@ -1,14 +1,13 @@
 const express = require("express");
-const { createCost } = require("../controller/costsController");
+const { createCost, getAllCosts } = require("../controller/costsController");
+const { verifyAccessToken } = require("../middleware/verifyAccessToken");
 
 const router = express.Router();
 
 //@ POST Method ==> create new cost
-router.post("/create_cost", createCost);
+router.post("/create", verifyAccessToken, createCost);
 
 //@ GET Method ===> get all costs
-router.get("/costs", (req, res) => {
-  res.status(200).json({ message: "ok" });
-});
+router.get("/", verifyAccessToken, getAllCosts);
 
 module.exports = router;
